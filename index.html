@@ -630,6 +630,7 @@
         showResults();
       } else {
         currentQuestion += 1;
+        updateScoreDisplays();
         renderQuestion();
       }
     });
@@ -644,6 +645,7 @@
       renderQuestion();
     });
 
+    updateScoreDisplays();
     renderQuestion();
   </script>
 </body>
