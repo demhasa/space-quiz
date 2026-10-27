@@ -129,6 +129,10 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .score-pill + .score-pill {
+      color: var(--signal);
+    }
+
     .progress-block { margin-bottom: 18px; }
 
     .progress-label {
@@ -386,7 +390,10 @@
         <h1>Orbit Explorer Quiz</h1>
         <p class="subtitle">Take a quick trip through our solar system.</p>
       </div>
-      <div class="score-pill" aria-live="polite">Score: <span id="score">0</span></div>
+      <div class="score-pills" aria-label="Quiz scores">
+        <div class="score-pill" aria-live="polite">Score: <span id="score">0</span></div>
+        <div class="score-pill" aria-live="polite">Best: <span id="bestScore">0</span></div>
+      </div>
     </header>
 
     <section class="progress-block" aria-label="Quiz progress">
@@ -413,6 +420,7 @@
       <h2 id="resultsTitle">Stellar work!</h2>
       <p class="results-copy" id="resultsCopy"></p>
       <div class="final-score"><span id="finalScore">0</span><small>/10</small></div>
+      <p class="best-result" id="bestResult">Best score: 0/10</p>
       <button class="restart-button" id="restartButton" type="button">Launch again</button>
     </section>
   </main>
@@ -480,6 +488,7 @@
     const nextButton = document.getElementById("nextButton");
     const restartButton = document.getElementById("restartButton");
     const score = document.getElementById("score");
+    const bestScoreElement = document.getElementById("bestScore");
     const progressText = document.getElementById("progressText");
     const progressPercent = document.getElementById("progressPercent");
     const progressBar = document.getElementById("progressBar");
@@ -488,10 +497,27 @@
     const resultsEmoji = document.getElementById("resultsEmoji");
     const resultsTitle = document.getElementById("resultsTitle");
     const resultsCopy = document.getElementById("resultsCopy");
+    const bestResult = document.getElementById("bestResult");
 
+    const BEST_SCORE_KEY = "orbit-explorer-best-score";
     let currentQuestion = 0;
     let totalScore = 0;
+    let bestScore = readBestScore();
     let answered = false;
+
+    function readBestScore() {
+      const storedScore = Number(localStorage.getItem(BEST_SCORE_KEY));
+      return Number.isInteger(storedScore) && storedScore >= 0 && storedScore <= questions.length ? storedScore : 0;
+    }
+
+    function saveBestScore() {
+      localStorage.setItem(BEST_SCORE_KEY, String(bestScore));
+    }
+
+    function updateScoreDisplays() {
+      score.textContent = totalScore;
+      bestScoreElement.textContent = bestScore;
+    }
 
     function renderQuestion() {
       const item = questions[currentQuestion];
@@ -535,7 +561,7 @@
 
       if (selectedIndex === item.correct) {
         totalScore += 1;
-        score.textContent = totalScore;
+        updateScoreDisplays();
         feedback.textContent = "Correct! Your navigation is right on course. ✨";
         feedback.className = "feedback correct";
       } else {
@@ -549,9 +575,15 @@
     }
 
     function showResults() {
+      if (totalScore > bestScore) {
+        bestScore = totalScore;
+        saveBestScore();
+      }
+      updateScoreDisplays();
       questionView.classList.add("hidden");
       resultsView.classList.remove("hidden");
       finalScore.textContent = totalScore;
+      bestResult.textContent = `Best score: ${bestScore}/${questions.length}`;
 
       if (totalScore === questions.length) {
         resultsEmoji.textContent = "🌟";
@@ -585,9 +617,10 @@
     restartButton.addEventListener("click", () => {
       currentQuestion = 0;
       totalScore = 0;
-      score.textContent = "0";
+      updateScoreDisplays();
       resultsView.classList.add("hidden");
       questionView.classList.remove("hidden");
+      updateScoreDisplays();
       renderQuestion();
     });
 
